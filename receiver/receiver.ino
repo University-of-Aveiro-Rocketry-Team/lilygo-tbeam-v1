@@ -1,12 +1,17 @@
 #include <LoRa.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
+
 
 #define RADIO_CS_PIN    18
 #define RADIO_RST_PIN   23
 #define RADIO_DIO0_PIN  26
 #define RADIO_MOSI_PIN  27
 
+#define SS_RX 32  // Software Serial RX Pin
+#define SS_TX 25  // Software Serial TX Pin
+SoftwareSerial mySerial(SS_RX, SS_TX); // RX, TX
 
 int expectedPacket = 1;
 int lostPackets = 0;
@@ -20,7 +25,11 @@ void setup() {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
-  LoRa.setSpreadingFactor(12);
+  LoRa.setSpreadingFactor(7);
+
+  mySerial.begin(9600); // Start software serial
+  Serial.println("Software Serial Initialized");
+  mySerial.println();
 }
 
 void loop() {
@@ -36,6 +45,8 @@ void loop() {
     // Extract the counter value from the received packet
     int separatorIndex = recv.indexOf(':');
     if (separatorIndex != -1) {
+      mySerial.println(recv);
+
       String counterString = recv.substring(0, separatorIndex);
       int receivedPacket = counterString.toInt();
 
@@ -67,4 +78,5 @@ void loop() {
       Serial.println();
     }
   }
+  delay(1);
 }

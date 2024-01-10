@@ -1,11 +1,17 @@
 #include <LoRa.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
+
 
 #define RADIO_CS_PIN    18
 #define RADIO_RST_PIN   23
 #define RADIO_DIO0_PIN  26
 #define RADIO_MOSI_PIN  27
+
+#define SS_RX 32  // Software Serial RX Pin
+#define SS_TX 33  // Software Serial TX Pin
+SoftwareSerial mySerial(SS_RX, SS_TX); // RX, TX
 
 
 int counter = 1;
@@ -18,22 +24,40 @@ void setup() {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
-  LoRa.setSpreadingFactor(12);
+  LoRa.setSpreadingFactor(10);
+
+  mySerial.begin(9600); // Start software serial
+  Serial.println("Software Serial Initialized");
 }
 
 void loop() {
-  if (Serial.available() > 0) {
-    String inputData = Serial.readStringUntil('\n');
-    String loraPacket = String(counter) + ": " + inputData;
+  static String inputData = "";
+  while (mySerial.available()) {
+    char incomingChar = (char)mySerial.read();
+    
+    // Check if the character is printable
+    if (isPrintable(incomingChar) || incomingChar == '\n') {
+      inputData += incomingChar;
+    }
 
-    Serial.print("Sending packet: ");
-    Serial.println(loraPacket); 
+    // Check for the newline character
+    if (incomingChar == '\n') {
+      String loraPacket = String(counter) + ": " + inputData;
 
-    LoRa.beginPacket();
-    LoRa.print(loraPacket);
-    LoRa.endPacket();
+      Serial.print("Sending packet: ");
+      Serial.println(loraPacket);
 
-    counter++;
-    delay(5000);
+      LoRa.beginPacket();
+      LoRa.print(loraPacket);
+      LoRa.endPacket();
+
+      counter++;
+      inputData = ""; // Reset the string for the next message
+    }
+
+    // Prevent inputData from exceeding a safe size
+    if (inputData.length() > 128) {
+        inputData = ""; // Reset if it gets too long
+    }
   }
 }
