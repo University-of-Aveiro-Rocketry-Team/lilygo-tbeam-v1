@@ -15,6 +15,8 @@ SoftwareSerial mySerial(SS_RX, SS_TX); // RX, TX
 
 
 int counter = 1;
+char inputData[512]; // Increase buffer size if needed
+int inputDataIndex = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -24,12 +26,12 @@ void setup() {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
-  LoRa.setSpreadingFactor(10);
+  LoRa.setSpreadingFactor(9);
 
   mySerial.begin(9600); // Start software serial
   Serial.println("Software Serial Initialized");
 }
-
+/*
 void loop() {
   static String inputData = "";
   while (mySerial.available()) {
@@ -56,8 +58,41 @@ void loop() {
     }
 
     // Prevent inputData from exceeding a safe size
-    if (inputData.length() > 128) {
+    if (inputData.length() > 256) {
         inputData = ""; // Reset if it gets too long
+    }
+  }
+}
+*/
+
+void loop() {
+  while (mySerial.available()) {
+    char incomingChar = (char)mySerial.read();
+    //Serial.print(incomingChar); // Debug: Print each character received
+
+    if (incomingChar == '\n' || inputDataIndex >= sizeof(inputData) - 1) {
+      inputData[inputDataIndex] = '\0'; // Null-terminate the string
+      //Serial.print("Complete message: "); // Debug
+      //Serial.println(inputData);
+
+      String loraPacket = String(counter) + ": " + inputData;
+      Serial.print("Sending packet: ");
+      Serial.println(loraPacket);
+
+      LoRa.beginPacket();
+      LoRa.print(loraPacket);
+      LoRa.endPacket();
+
+      counter++;
+      inputDataIndex = 0; // Reset index for next message
+    } else {
+      inputData[inputDataIndex++] = incomingChar;
+    }
+
+    // If the buffer is getting full without receiving a newline, clear it
+    if (inputDataIndex >= sizeof(inputData) - 10) {
+      Serial.println("Buffer almost full, clearing buffer."); // Debug
+      inputDataIndex = 0;
     }
   }
 }
