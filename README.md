@@ -2,7 +2,7 @@
 
 ## Setup
 
-1. Within the Arduino IDE, install the following libraries dependencies:
+1. Within the Arduino IDE, install the following dependency libraries:
    - `Lora` by Sandeep Mistry [(arduino-LoRa)](https://github.com/sandeepmistry/arduino-LoRa)
    - `EspSoftwareSerial` by Peter Lerup [(espsoftwareserial)](https://github.com/plerup/espsoftwareserial/)
 2. Make sure to select the board `T-Beam`.
